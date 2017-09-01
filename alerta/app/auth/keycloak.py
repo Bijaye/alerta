@@ -7,7 +7,7 @@ from flask_cors import cross_origin
 from alerta.app.exceptions import ApiError, NoCustomerMatch
 from alerta.app.models.customer import Customer
 
-from alerta.app.auth.utils import create_token
+from alerta.app.auth.utils import is_authorized, create_token
 
 from . import auth
 
@@ -42,9 +42,8 @@ def keycloak():
     roles = profile['roles']
     login = profile['preferred_username']
 
-    if current_app.config['AUTH_REQUIRED'] and not ('*' in current_app.config['ALLOWED_KEYCLOAK_ROLES']
-            or set(current_app.config['ALLOWED_KEYCLOAK_ROLES']).intersection(set(roles))):
-        return jsonify(status="error", message="User %s is not authorized" % login), 403
+    if is_authorized('ALLOWED_KEYCLOAK_ROLES', roles):
+        raise ApiError("User %s is not authorized" % login, 403)
 
     if current_app.config['CUSTOMER_VIEWS']:
         try:

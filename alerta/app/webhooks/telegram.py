@@ -27,10 +27,9 @@ def telegram():
             alert.set_status(status='closed', text='status change via Telegram')
         elif command == '/blackout':
             environment, resource, event = alert.split('|', 2)
-            blackout = Blackout(environment,resource=resource, event=event)
+            blackout = Blackout(environment, resource=resource, event=event)
             blackout.create()
 
         return jsonify(status="ok")
     else:
         return jsonify(status="error", message="no callback_query in Telegram message"), 400
-

@@ -21,7 +21,7 @@ def index():
     for rule in current_app.url_map.iter_rules():
         links.append({
             "rel": rule.endpoint,
-            "href": absolute_url(rule.rule) ,
+            "href": absolute_url(rule.rule),
             "method": ','.join([m for m in rule.methods if m not in ['HEAD', 'OPTIONS']])
         })
     return jsonify(status="ok", uri=absolute_url(), data={'description':'Alerta API'}, links=sorted(links, key=lambda k: k["href"]))

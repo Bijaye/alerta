@@ -3,9 +3,9 @@ from flask import request, g, jsonify
 from flask_cors import cross_origin
 
 from alerta.app.auth.utils import permission
-from alerta.app.utils.api import absolute_url, process_alert, add_remote_ip
+from alerta.app.utils.api import process_alert, add_remote_ip
 from alerta.app.models.alert import Alert
-from alerta.app.exceptions import RejectException
+from alerta.app.exceptions import RejectException, ApiError
 
 
 from . import webhooks
@@ -77,7 +77,7 @@ def grafana():
         try:
             existingAlerts = Alert.find_all({'attributes.ruleId': data['ruleId'], 'customer': g.get('customer', None)})
         except Exception as e:
-            return jsonify(status="error", message=str(e)), 500
+            raise ApiError(str(e), 500)
 
         for updateAlert in existingAlerts:
             updateAlert.severity = 'normal'
@@ -86,16 +86,14 @@ def grafana():
             try:
                 alert = process_alert(updateAlert)
             except RejectException as e:
-                return jsonify(status="error", message=str(e)), 403
+                raise ApiError(str(e), 403)
             except Exception as e:
-                return jsonify(status="error", message=str(e)), 500
+                raise ApiError(str(e), 500)
             alerts.append(alert)
     else:
-        return jsonify(status="error", message="no alerts in Grafana notification payload"), 400
+        raise ApiError("no alerts in Grafana notification payload", 400)
 
     if len(alerts) == 1:
         return jsonify(status="ok", id=alerts[0].id, alert=alerts[0].serialize), 201
     else:
         return jsonify(status="ok", ids=[alert.id for alert in alerts]), 201
-
-

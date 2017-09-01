@@ -4,6 +4,7 @@ from flask_cors import cross_origin
 
 from alerta.app.models.alert import Alert
 from alerta.app.auth.utils import permission
+from alerta.app.exceptions import ApiError
 
 from . import webhooks
 
@@ -70,25 +71,25 @@ def pagerduty():
             try:
                 incident_key, status, text = parse_pagerduty(message)
             except ValueError as e:
-                return jsonify(status="error", message=str(e)), 400
+                raise ApiError(str(e), 400)
 
             customer = g.get('customer', None)
             try:
                 alert = Alert.get(id=incident_key, customer=customer)
             except Exception as e:
-                return jsonify(status="error", message=str(e)), 500
+                raise ApiError(str(e), 500)
 
             if not alert:
-                return jsonify(stats="error", message="not found"), 404
+                raise ApiError("not found", 404)
 
             try:
                 updated = alert.set_status(status, text)
             except Exception as e:
-                return jsonify(status="error", message=str(e)), 500
+                raise ApiError(str(e), 500)
     else:
-        return jsonify(status="error", message="no messages in PagerDuty data payload"), 400
+        raise ApiError("no messages in PagerDuty data payload", 400)
 
     if updated:
         return jsonify(status="ok"), 200
     else:
-        return jsonify(status="error", message="update PagerDuty incident status failed"), 500
+        raise ApiError("update PagerDuty incident status failed", 500)

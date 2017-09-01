@@ -8,7 +8,7 @@ from alerta.app.exceptions import ApiError, NoCustomerMatch
 from alerta.app.models.customer import Customer
 from alerta.app.models.token import Jwt
 
-from alerta.app.auth.utils import create_token
+from alerta.app.auth.utils import is_authorized, create_token
 
 from . import auth
 
@@ -38,8 +38,7 @@ def google():
 
     domain = id_token.email.split('@')[1]
 
-    if current_app.config['AUTH_REQUIRED'] and not ('*' in current_app.config['ALLOWED_EMAIL_DOMAINS']
-            or domain in current_app.config['ALLOWED_EMAIL_DOMAINS']):
+    if is_authorized('ALLOWED_EMAIL_DOMAINS', groups=[domain]):
         raise ApiError("User %s is not authorized" % id_token.email, 403)
 
     # Get Google+ profile for Full name

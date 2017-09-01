@@ -15,9 +15,6 @@ from alerta.app.utils.api import absolute_url
 from alerta.app.utils.format import DateTime
 
 
-prog = os.path.basename(sys.argv[0])
-
-
 class History(object):
 
     def __init__(self, id, event, **kwargs):
@@ -76,7 +73,7 @@ class Alert(object):
         self.text = kwargs.get('text', None) or ""
         self.tags = kwargs.get('tags', None) or list()
         self.attributes = kwargs.get('attributes', None) or dict()
-        self.origin = kwargs.get('origin', None) or '%s/%s' % (prog, platform.uname()[1])
+        self.origin = kwargs.get('origin', None) or '%s/%s' % (os.path.basename(sys.argv[0]), platform.uname()[1])
         self.event_type = kwargs.get('event_type', kwargs.get('type', None)) or "exceptionAlert"
         self.create_time = kwargs.get('create_time', None) or datetime.utcnow()
         self.timeout = kwargs.get('timeout', None) or current_app.config['DEFAULT_ALERT_TIMEOUT']
@@ -257,8 +254,6 @@ class Alert(object):
             return cls.from_document(r)
         elif isinstance(r, tuple):
             return cls.from_record(r)
-        else:
-            return
 
     PARAMS_EXCLUDE = [
         '_',
@@ -271,7 +266,7 @@ class Alert(object):
     @classmethod
     def build_query(cls, params):
         return db.build_query(
-            MultiDict([(k, v) for k,v in params.copy().items(multi=True) if k not in cls.PARAMS_EXCLUDE])
+            MultiDict([(k, v) for k, v in params.copy().items(multi=True) if k not in cls.PARAMS_EXCLUDE])
         )
 
     def is_duplicate(self):
@@ -317,13 +312,13 @@ class Alert(object):
 
         if status != self.status:
             self.history.append(History(
-            id=self.id,
-            event=self.event,
-            status=status,
-            change_type='status',
-            text="new alert status change",
-            update_time=self.last_receive_time
-        ))
+                id=self.id,
+                event=self.event,
+                status=status,
+                change_type='status',
+                text="new alert status change",
+                update_time=self.last_receive_time
+            ))
 
         return Alert.from_db(db.create_alert(self))
 

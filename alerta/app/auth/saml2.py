@@ -4,10 +4,10 @@ import json
 from flask import current_app, request, jsonify, make_response
 from flask_cors import cross_origin
 
-from alerta.app.exceptions import ApiError, NoCustomerMatch
+from alerta.app.exceptions import NoCustomerMatch
 from alerta.app.models.customer import Customer
 
-from alerta.app.auth.utils import create_token
+from alerta.app.auth.utils import is_authorized, create_token
 from alerta.app.utils.api import absolute_url, deepmerge
 
 from . import auth
@@ -92,8 +92,7 @@ def saml_response_from_idp():
     name = (current_app.config.get('SAML2_USER_NAME_FORMAT', '{givenName} {surname}')).format(**dict(map(lambda x: (x[0], x[1][0]), identity.items())))
 
     groups = identity.get('groups', [])
-    if current_app.config['AUTH_REQUIRED'] and not ('*' in current_app.config['ALLOWED_SAML2_GROUPS']
-            or set(current_app.config['ALLOWED_SAML2_GROUPS']).intersection(set(groups))):
+    if is_authorized('ALLOWED_SAML2_GROUPS', groups):
         return _make_response({'status': 'error', 'message': 'User {} is not authorized'.format(email)}, 403)
 
     if current_app.config['CUSTOMER_VIEWS']:

@@ -1,7 +1,7 @@
 
+from copy import copy
 import pytz
 
-from copy import copy
 from dateutil.parser import parse as parse_date
 
 from flask import request, g, jsonify
@@ -9,8 +9,8 @@ from flask_cors import cross_origin
 
 from alerta.app.auth.utils import permission
 from alerta.app.models.alert import Alert
-from alerta.app.utils.api import absolute_url, process_alert, add_remote_ip
-from alerta.app.exceptions import RejectException
+from alerta.app.utils.api import process_alert, add_remote_ip
+from alerta.app.exceptions import RejectException, ApiError
 
 from . import webhooks
 
@@ -84,7 +84,7 @@ def prometheus():
             try:
                 incomingAlert = parse_prometheus(alert, external_url)
             except ValueError as e:
-                return jsonify(status="error", message=str(e)), 400
+                raise ApiError(str(e), 400)
 
             if g.get('customer', None):
                 incomingAlert.customer = g.get('customer')
@@ -94,12 +94,12 @@ def prometheus():
             try:
                 alert = process_alert(incomingAlert)
             except RejectException as e:
-                return jsonify(status="error", message=str(e)), 403
+                raise ApiError(str(e), 403)
             except Exception as e:
-                return jsonify(status="error", message=str(e)), 500
+                raise ApiError(str(e), 500)
             alerts.append(alert)
     else:
-        return jsonify(status="error", message="no alerts in Prometheus notification payload"), 400
+        raise ApiError("no alerts in Prometheus notification payload", 400)
 
     if len(alerts) == 1:
         return jsonify(status="ok", id=alerts[0].id, alert=alerts[0].serialize), 201

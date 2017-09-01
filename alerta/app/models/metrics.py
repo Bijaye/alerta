@@ -8,7 +8,7 @@ from alerta.app import db
 
 
 class MetricEncoder(json.JSONEncoder):
-
+    # pylint: disable=method-hidden
     def default(self, o):
         return o.__dict__
 
@@ -41,12 +41,11 @@ class Gauge(object):
                     '# HELP alerta_{group}_{name} {description}\n'
                     '# TYPE alerta_{group}_{name} gauge\n'
                     'alerta_{group}_{name} {value}\n'.format(
-                            group=g.group, name=g.name, description=g.description, value=g.value
+                        group=g.group, name=g.name, description=g.description, value=g.value
                     )
                 )
             return "".join(gauges)
-        else:
-            return db.get_gauges()
+        return db.get_gauges()
 
 
 class Counter(object):
@@ -77,12 +76,11 @@ class Counter(object):
                     '# HELP alerta_{group}_{name} {description}\n'
                     '# TYPE alerta_{group}_{name} counter\n'
                     'alerta_{group}_{name}_total {count}\n'.format(
-                            group=c.group, name=c.name, description=c.description, count=c.count
+                        group=c.group, name=c.name, description=c.description, count=c.count
                     )
                 )
             return "".join(counters)
-        else:
-            return db.get_counters()
+        return db.get_counters()
 
 
 class Timer(object):
@@ -127,12 +125,11 @@ class Timer(object):
                     '# TYPE alerta_{group}_{name} summary\n'
                     'alerta_{group}_{name}_count {count}\n'
                     'alerta_{group}_{name}_sum {total_time}\n'.format(
-                            group=t.group, name=t.name, description=t.description, count=t.count, total_time=t.total_time
+                        group=t.group, name=t.name, description=t.description, count=t.count, total_time=t.total_time
                     )
                 )
             return "".join(timers)
-        else:
-            return db.get_timers()
+        return db.get_timers()
 
 
 def timer(metric):
@@ -146,4 +143,3 @@ def timer(metric):
             # return f(*args, **kwargs)
         return wrapped
     return decorated
-

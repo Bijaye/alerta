@@ -1,12 +1,12 @@
 
-from flask import current_app, request
+from os.path import join as path_join
 from functools import wraps
+
+from flask import current_app, request
 
 from alerta.app import plugins
 from alerta.app.exceptions import ApiError
 from alerta.app.exceptions import RejectException, RateLimit, BlackoutPeriod
-
-from os.path import join as path_join
 
 try:
     from urllib.parse import urljoin, urlparse, urlunparse
@@ -39,11 +39,11 @@ def absolute_url(path=''):
     return urljoin(base_url, path.lstrip('/'))
 
 
-def add_remote_ip(request, alert):
-    if request.headers.getlist("X-Forwarded-For"):
-       alert.attributes.update(ip=request.headers.getlist("X-Forwarded-For")[0])
+def add_remote_ip(req, alert):
+    if req.headers.getlist("X-Forwarded-For"):
+        alert.attributes.update(ip=req.headers.getlist("X-Forwarded-For")[0])
     else:
-       alert.attributes.update(ip=request.remote_addr)
+        alert.attributes.update(ip=req.remote_addr)
 
 
 def process_alert(alert):

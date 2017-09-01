@@ -12,17 +12,13 @@ from alerta.app import db
 from alerta.app.utils.api import absolute_url
 from alerta.app.utils.format import DateTime
 
-DEFAULT_TIMEOUT = 300  # seconds
-
-prog = os.path.basename(sys.argv[0])
-
 
 class Heartbeat(object):
 
     def __init__(self, origin=None, tags=None, create_time=None, timeout=None, customer=None, **kwargs):
 
         self.id = kwargs.get('id', str(uuid4()))
-        self.origin = origin or '%s/%s' % (prog, platform.uname()[1])
+        self.origin = origin or '%s/%s' % (os.path.basename(sys.argv[0]), platform.uname()[1])
         self.tags = tags or list()
         self.event_type = kwargs.get('event_type', kwargs.get('type', None)) or 'Heartbeat'
         self.create_time = create_time or datetime.utcnow()
@@ -73,7 +69,7 @@ class Heartbeat(object):
             create_time=doc.get('createTime', None),
             timeout=doc.get('timeout', None),
             receive_time=doc.get('receiveTime', None),
-            customer = doc.get('customer', None)
+            customer=doc.get('customer', None)
         )
 
     @classmethod
@@ -86,7 +82,7 @@ class Heartbeat(object):
             create_time=rec.create_time,
             timeout=rec.timeout,
             receive_time=rec.receive_time,
-            customer = rec.customer
+            customer=rec.customer
         )
 
     @classmethod

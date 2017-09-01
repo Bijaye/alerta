@@ -7,7 +7,7 @@ from flask_cors import cross_origin
 from alerta.app.exceptions import ApiError, NoCustomerMatch
 from alerta.app.models.customer import Customer
 
-from alerta.app.auth.utils import create_token
+from alerta.app.auth.utils import is_authorized, create_token
 
 from . import auth
 
@@ -40,9 +40,8 @@ def gitlab():
     groups = [g['path'] for g in r.json()]
     login = profile['username']
 
-    if current_app.config['AUTH_REQUIRED'] and not ('*' in current_app.config['ALLOWED_GITLAB_GROUPS']
-            or set(current_app.config['ALLOWED_GITLAB_GROUPS']).intersection(set(groups))):
-        return jsonify(status="error", message="User %s is not authorized" % login), 403
+    if is_authorized('ALLOWED_GITLAB_GROUPS', groups):
+        raise ApiError("User %s is not authorized" % login, 403)
 
     if current_app.config['CUSTOMER_VIEWS']:
         try:
@@ -52,6 +51,6 @@ def gitlab():
     else:
         customer = None
 
-    token = create_token(profile['id'], profile.get('name', '@'+login), login, provider='gitlab',customer=customer,
+    token = create_token(profile['id'], profile.get('name', '@'+login), login, provider='gitlab', customer=customer,
                          groups=groups, email=profile.get('email', None), email_verified=True if profile.get('email', None) else False)
     return jsonify(token=token.tokenize)

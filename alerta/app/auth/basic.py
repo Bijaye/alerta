@@ -10,7 +10,7 @@ from alerta.app.exceptions import ApiError, NoCustomerMatch
 from alerta.app.models.user import User
 from alerta.app.models.customer import Customer
 
-from alerta.app.auth.utils import create_token
+from alerta.app.auth.utils import is_authorized, create_token
 
 from . import auth
 
@@ -39,8 +39,7 @@ def signup():
         raise ApiError('email not verified', 401)
 
     # check allowed domain
-    if user.domain not in current_app.config['ALLOWED_EMAIL_DOMAINS'] and '*' not in current_app.config[
-        'ALLOWED_EMAIL_DOMAINS']:
+    if is_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
         raise ApiError("unauthorized domain", 403)
 
     # assign customer
@@ -77,12 +76,13 @@ def login():
     if not user.verify_password(password):
         raise ApiError("invalid password", 401)
 
-    if current_app.config['EMAIL_VERIFICATION'] and user.email_verified == False:
-        # FIXME link for resend verification
+    if current_app.config['EMAIL_VERIFICATION'] and not user.email_verified:
+        hash = str(uuid4())
+        send_confirmation(user, hash)
+        user.set_email_hash(hash)
         raise ApiError('email not verified', 401)
 
-    # verify domain
-    if user.domain not in current_app.config['ALLOWED_EMAIL_DOMAINS'] and '*' not in current_app.config['ALLOWED_EMAIL_DOMAINS']:
+    if is_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
         raise ApiError("unauthorized domain", 403)
 
     # assign customer
@@ -149,12 +149,10 @@ def send_confirmation(user, hash):
         mx.login(current_app.config['MAIL_FROM'], current_app.config['SMTP_PASSWORD'])
         mx.sendmail(current_app.config['MAIL_FROM'], [user.email], msg.as_string())
         mx.close()
+    except smtplib.SMTPException as e:
+        logging.error('Failed to send email : %s', str(e))
     except (socket.error, socket.herror, socket.gaierror) as e:
         logging.error('Mail server connection error: %s', str(e))
         return
-    except smtplib.SMTPException as e:
-        logging.error('Failed to send email : %s', str(e))
     except Exception as e:
         logging.error('Unhandled exception: %s', str(e))
-
-

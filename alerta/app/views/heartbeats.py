@@ -82,4 +82,3 @@ def delete_heartbeat(heartbeat_id):
         return jsonify(status="ok")
     else:
         raise ApiError("failed to delete heartbeat", 500)
-

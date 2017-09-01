@@ -1,6 +1,6 @@
 
-import six
 import datetime
+import six
 
 from flask import json
 

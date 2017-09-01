@@ -69,7 +69,7 @@ class ApiKey(object):
             expire_time=doc.get('expireTime', None),
             count=doc.get('count', None),
             last_used_time=doc.get('lastUsedTime', None),
-            customer = doc.get('customer', None)
+            customer=doc.get('customer', None)
         )
 
     @classmethod
@@ -82,7 +82,7 @@ class ApiKey(object):
             expire_time=rec.expire_time,
             count=rec.count,
             last_used_time=rec.last_used_time,
-            customer = rec.customer
+            customer=rec.customer
         )
 
     @classmethod
@@ -97,7 +97,6 @@ class ApiKey(object):
     def create(self):
         """
         Create a new API key.
-        :return: 
         """
         return ApiKey.from_db(db.create_key(self))
 
@@ -105,9 +104,6 @@ class ApiKey(object):
     def get(key, customer=None):
         """
         Get API key details.
-        :param key: 
-        :param customer: 
-        :return: 
         """
         return ApiKey.from_db(db.get_key(key, customer))
 
@@ -115,10 +111,6 @@ class ApiKey(object):
     def find_all(query=None, page=1, page_size=0):
         """
         List all API keys.
-        :param query: 
-        :param page: 
-        :param limit: 
-        :return: 
         """
         return [ApiKey.from_db(key) for key in db.get_keys(query, page, page_size)]
 
@@ -126,27 +118,17 @@ class ApiKey(object):
     def find_by_user(user, page=1, page_size=0):
         """
         List API keys for a user.
-        :param user: 
-        :param page: 
-        :param limit: 
-        :return: 
         """
         return [ApiKey.from_db(key) for key in db.get_keys({"user": user}, page, page_size)]
 
     def delete(self):
         """
         Delete an API key.
-        :return: 
         """
         return db.delete_key(self.key)
 
     @staticmethod
     def verify_key(key):
-        """
-        :param key: 
-        :param customer: 
-        :return: 
-        """
         key_info = ApiKey.from_db(db.get_key(key))
         if key_info and key_info.expire_time > datetime.utcnow():
             db.update_key_last_used(key)

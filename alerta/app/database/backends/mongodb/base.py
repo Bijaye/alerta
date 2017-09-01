@@ -1,8 +1,10 @@
 import json
-import pytz
 import re
 
 from datetime import datetime, timedelta
+
+import pytz
+
 from flask import current_app, g
 
 from pymongo import MongoClient, ASCENDING, TEXT, ReturnDocument
@@ -11,7 +13,7 @@ from pymongo.errors import ConnectionFailure
 from alerta.app.models import status_code
 from alerta.app.utils.format import DateTime
 from alerta.app import severity
-from alerta.app.exceptions import NoCustomerMatch, ApiError
+from alerta.app.exceptions import NoCustomerMatch
 
 # See https://github.com/MongoEngine/flask-mongoengine/blob/master/flask_mongoengine/__init__.py
 # See https://github.com/dcrosta/flask-pymongo/blob/master/flask_pymongo/__init__.py
@@ -66,7 +68,8 @@ class Backend:
         name = name or self.db.name
         self.cx.drop_database(name)
 
-    def build_query(self, params):
+    @staticmethod
+    def build_query(params):
 
         query_time = datetime.utcnow()
 
@@ -242,16 +245,10 @@ class Backend:
         pipeline = [
             {'$match': {"environment": alert.environment, "resource": alert.resource, "event": alert.event}},
             {'$unwind': '$history'},
-            {'$match': {
-                "history.updateTime": {'$gt': datetime.utcnow() - timedelta(seconds=window)}},
-                "history.type": "severity"
+            {'$match': {"history.updateTime": {'$gt': datetime.utcnow() - timedelta(seconds=window)}},
+             "history.type": "severity"
             },
-            {
-                '$group': {
-                    "_id": '$history.type',
-                    "count": {'$sum': 1}
-                }
-            }
+            {'$group': {"_id": '$history.type', "count": {'$sum': 1}}}
         ]
         responses = self.db.alerts.aggregate(pipeline)
         for r in responses:
@@ -966,9 +963,6 @@ class Backend:
         query = {"hash": hash}
         return self.db.users.find_one(query)
 
-    def get_user_password(self, id):
-        return
-
     def update_last_login(self, id):
         return self.db.users.update_one(
             {"_id": id},
@@ -1060,7 +1054,6 @@ class Backend:
     #### METRICS
 
     def get_metrics(self, type=None):
-
         query = {"type": type} if type else {}
         return list(self.db.metrics.find(query, {"_id": 0}))
 

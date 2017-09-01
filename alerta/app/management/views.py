@@ -9,14 +9,13 @@ try:
 except Exception:
     from alerta import dev as build
 
+from alerta.app import db
 from alerta.app.models.heartbeat import Heartbeat
 from alerta.app.models.alert import Alert
 from alerta.app.models.switch import Switch, SwitchState
 from alerta.app.auth.utils import permission
 from alerta.app.models.metrics import Gauge, Counter, Timer
 from alerta.version import __version__
-
-#LOG = app.logger
 
 from . import mgmt
 
@@ -118,13 +117,12 @@ def good_to_go():
 def health_check():
 
     try:
-
         heartbeats = Heartbeat.find_all()
         for heartbeat in heartbeats:
             delta = datetime.datetime.utcnow() - heartbeat.receive_time
             threshold = int(heartbeat.timeout) * 4
             if delta.seconds > threshold:
-                return 'HEARTBEAT_STALE: %s' % heartbeat.origin , 503
+                return 'HEARTBEAT_STALE: %s' % heartbeat.origin, 503
 
     except Exception as e:
         return 'HEALTH_CHECK_FAILED: %s' % e, 503

@@ -14,6 +14,12 @@ from alerta.app.models.permission import Permission
 from alerta.app.exceptions import ApiError
 
 
+def is_authorized(allowed_setting, groups):
+    return (current_app.config['AUTH_REQUIRED']
+            and not ('*' in current_app.config[allowed_setting]
+                     or set(current_app.config[allowed_setting]).intersection(set(groups))))
+
+
 def create_token(user_id, name, login, provider, customer, orgs=None, groups=None, roles=None, email=None, email_verified=None):
     now = datetime.utcnow()
     scopes = Permission.lookup(login, groups=(roles or []) + (groups or []) + (orgs or []))
@@ -44,7 +50,7 @@ def permission(scope):
         def wrapped(*args, **kwargs):
 
             auth_header = request.headers.get('Authorization', '')
-            m = re.match('Key (\S+)', auth_header)
+            m = re.match(r'Key (\S+)', auth_header)
             param = m.group(1) if m else request.args.get('api-key', None)
 
             if param:
@@ -61,7 +67,7 @@ def permission(scope):
                     return f(*args, **kwargs)
 
             auth_header = request.headers.get('Authorization', '')
-            m = re.match('Bearer (\S+)', auth_header)
+            m = re.match(r'Bearer (\S+)', auth_header)
             token = m.group(1) if m else None
 
             if token:

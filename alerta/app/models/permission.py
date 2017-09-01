@@ -89,4 +89,3 @@ class Permission(object):
     @classmethod
     def lookup(cls, login, groups):
         return db.get_scopes_by_match(login, matches=groups)
-

@@ -82,7 +82,7 @@ def cloudwatch():
     try:
         incomingAlert = parse_notification(request.data)
     except ValueError as e:
-        return jsonify(status="error", message=str(e)), 400
+        raise ApiError(str(e), 400)
 
     if g.get('customer', None):
         incomingAlert.customer = g.get('customer')
@@ -92,12 +92,11 @@ def cloudwatch():
     try:
         alert = process_alert(incomingAlert)
     except RejectException as e:
-        return jsonify(status="error", message=str(e)), 403
+        raise ApiError(str(e), 403)
     except Exception as e:
-        return jsonify(status="error", message=str(e)), 500
+        raise ApiError(str(e), 500)
 
     if alert:
         return jsonify(status="ok", id=alert.id, alert=alert.serialize), 201
     else:
         raise ApiError("insert or update of cloudwatch alarm failed", 500)
-
